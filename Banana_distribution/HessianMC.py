@@ -5,7 +5,7 @@ tfd = tfp.distributions
 
 # find MAP point
 @tf.function()
-def gradient_decent(unnormalized_posterior_log_prob, steps=1000, learning_rate=0.001):
+def gradient_decent(unnormalized_posterior_log_prob, steps=10000, learning_rate=0.001):
 
     mu = tf.constant([[-1., -1.]])
 
@@ -58,9 +58,9 @@ def negative_log_post(unnormalized_posterior_log_prob, vars):
 @tf.function
 def acceptance_gpCN(unnormalized_posterior_log_prob, m_current, m_proposed, MAP, C_post):
 
-    delta_current = tf.add(negative_log_post(
+    delta_current = tf.subtract(negative_log_post(
         unnormalized_posterior_log_prob, m_current), matrixcompute(m_current, MAP, C_post))
-    delta_proposed = tf.add(negative_log_post(
+    delta_proposed = tf.subtract(negative_log_post(
         unnormalized_posterior_log_prob, m_proposed), matrixcompute(m_proposed, MAP, C_post))
 
     # calculate accept ratio if exp()<1
@@ -103,7 +103,7 @@ def Laplace_appro(H, C_prior):
     return tf.linalg.inv((tf.add(H, tf.linalg.inv(C_prior))))
 
 
-def run_chain_hessian(cov, num_results, burnin, initial_chain_state, unnormalized_posterior_log_prob):
+def run_chain_hessian(cov, num_results, burnin, unnormalized_posterior_log_prob):
     MAP = gradient_decent(unnormalized_posterior_log_prob)
     Hessian_matrix = Full_Hessian(MAP, unnormalized_posterior_log_prob)
 
@@ -115,7 +115,7 @@ def run_chain_hessian(cov, num_results, burnin, initial_chain_state, unnormalize
     accepted = []
     rejected = []
 
-    m_current = initial_chain_state  # init m
+    m_current = MAP  # init m
 
     for k in range(steps+burn_in):
 

@@ -14,7 +14,7 @@ class MCMC:
 
         self.target_distribution = target_distribution
         self.num_results = 500
-        self.brunin = 100
+        self.burnin = 100
         self.initial_chain_state = tf.constant([[-1.7, -1.7]])
 
     @tf.function
@@ -36,7 +36,7 @@ class MCMC:
         self.method = method
         if self.method == 'RMH':  # Random Walk Matroplis Hasting algorithm
             scale = 0.1
-            samples, kernel_results = run_chain_RMH(scale, self.num_results, self.brunin,
+            samples, kernel_results = run_chain_RMH(scale, self.num_results, self.burnin,
                                                     self.initial_chain_state, self.unnormalized_posterior_log_prob)
 
             samples = tf.squeeze(samples)
@@ -51,7 +51,7 @@ class MCMC:
             return accepted, rejected
 
         if self.method == 'HMC':  # Hamiltonian Monte Carlo algoritem
-            samples, kernel_results = run_chain_HMC(self.num_results, self.brunin,
+            samples, kernel_results = run_chain_HMC(self.num_results, self.burnin,
                                                     self.initial_chain_state, self.unnormalized_posterior_log_prob)
 
             samples = tf.squeeze(samples)
@@ -66,8 +66,8 @@ class MCMC:
             return accepted, rejected
 
         if self.method == 'HessianMC':
-            accepted, rejected = run_chain_hessian(self.target_distribution.cov, self.num_results, self.brunin,
-                                                   self.initial_chain_state, self.unnormalized_posterior_log_prob)
+            accepted, rejected = run_chain_hessian(self.target_distribution.cov, self.num_results, self.burnin,
+                                                   self.unnormalized_posterior_log_prob)
             accepted = np.array(accepted)
             rejected = np.array(rejected)
             return accepted, rejected
