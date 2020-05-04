@@ -47,8 +47,8 @@ class Gravity_Polygon(tf.Module):
             self.Range, self.depth, self.Number_para, self.thickness)
 
     def A(self, x1, z1, x2, z2):
-        numerator = (x2-x1)*(x1*z2-x2*z1)
-        denominator = (x2-x1)**2 + (z2-z1)**2
+        numerator = (x2 - x1) * (x1 * z2 - x2 * z1)
+        denominator = (x2 - x1)**2 + (z2 - z1)**2
         return divide(numerator, denominator)
 
     def B(self, x1, z1, x2, z2):
@@ -58,7 +58,7 @@ class Gravity_Polygon(tf.Module):
         p1, p2 : int, position
 
         '''
-        return divide((z1-z2), (x2-x1))
+        return divide((z1 - z2), (x2 - x1))
 
     def theta_new(self, xn, zn):
 
@@ -66,7 +66,7 @@ class Gravity_Polygon(tf.Module):
 
         m = tf.where(m < 0, m + pi, m)
 
-        m = tf.where(m == 0, m + pi/2, m)
+        m = tf.where(m == 0, m + pi / 2, m)
 
         return m
 
@@ -78,13 +78,13 @@ class Gravity_Polygon(tf.Module):
         theta1 = self.theta_new(x1, z1)
         theta2 = self.theta_new(x2, z2)
 
-        r1 = (tf.sqrt(x1**2.+z1**2.))
-        r2 = (tf.sqrt(x2**2.+z2**2.))
+        r1 = (tf.sqrt(x1**2. + z1**2.))
+        r2 = (tf.sqrt(x2**2. + z2**2.))
 
         _A = self.A(x1, z1, x2, z2)
         _B = self.B(x1, z1, x2, z2)
 
-        Z_result = _A*((theta1-theta2)+_B*tf.math.log(divide(r1, r2)))
+        Z_result = _A * ((theta1 - theta2) + _B * tf.math.log(divide(r1, r2)))
 
         return Z_result
 
@@ -125,11 +125,8 @@ class Gravity_Polygon(tf.Module):
 
         # gravitational constant  m^3 kg ^-1 s^-2
         G = constant64(6.67 * 10**(-11))
-        gravity = 2*G*self.rho * \
+        gravity = 2 * G * self.rho * \
             tf.reduce_sum(-self.Z_new(x1, z1, x2, z2), axis=1)
-
-        # print('tracing')
-        # tf.print('executing')
 
         return tf.squeeze(gravity)
 
@@ -140,7 +137,7 @@ class Gravity_Polygon(tf.Module):
         self.cov = cov
 
     @tf.function
-    def joint_log_post(self, Data, _control_position):
+    def joint_log_post(self, Data, control_position):
         """[summary]
 
         Arguments:
@@ -159,9 +156,9 @@ class Gravity_Polygon(tf.Module):
         # define likelihood
 
         _control_index = tf.linspace(
-            self.Range[0], self.Range[1], _control_position.shape[0])
+            self.Range[0], self.Range[1], tf.shape(control_position)[0])
 
-        __x, __z = self.gp.GaussianProcess(_control_index, _control_position)
+        __x, __z = self.gp.GaussianProcess(_control_index, control_position)
 
         Gm_ = self.calculate_gravity(__x, __z)
 
@@ -170,9 +167,9 @@ class Gravity_Polygon(tf.Module):
             scale_tril=tf.linalg.cholesky(self.cov))
 
         # return the posterior probability
-        return (mvn_prior.log_prob(_control_position)
+        return (mvn_prior.log_prob(control_position)
                 + mvn_likelihood.log_prob(Data))
 
     @tf.function
-    def negative_log_posterior(self, Data, _control_position):
-        return -self.joint_log_post(Data, _control_position)
+    def negative_log_posterior(self, Data, control_position):
+        return -self.joint_log_post(Data, control_position)

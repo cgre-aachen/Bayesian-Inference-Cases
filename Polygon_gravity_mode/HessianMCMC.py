@@ -94,9 +94,11 @@ class HessianMCMC():
 
         return m_proposed
 
-    def run_chain_hessian(self):
+    def run_chain_hessian(self,Hess = None):
 
-        self.Full_Hessian()
+        if Hess is None:
+            self.Full_Hessian()
+        else: self.Hessian = Hess
         self.Laplace_appro()
 
         burn_in = self.number_burnin
@@ -104,6 +106,7 @@ class HessianMCMC():
         k = 0
         accepted = []
         rejected = []
+        samples = []
 
         m_current = self.mu_init  # init m
 
@@ -115,10 +118,11 @@ class HessianMCMC():
                 m_current = m_proposed
                 if k > burn_in:
                     accepted.append(m_proposed.numpy())
+                    samples.append(m_proposed.numpy())
             else:
                 m_current = m_current
                 rejected.append(m_proposed.numpy())
-
+                samples.append(m_current.numpy())
         self.acceptance_rate = np.shape(accepted)[0]/self.number_sample
 
-        return accepted, rejected
+        return accepted, rejected, samples
